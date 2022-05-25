@@ -139,12 +139,12 @@ Use `apply_xifti` to apply the `falff` function to each row of the data matrix i
 
 Plot the results using a color scale going from 0 (white) to 1 (blue), and save to a PNG file. For help on finding the relevant arguments, read `help(view_xifti_surface)`.
 
-```{r, fig.cap="fALFF", rgl=TRUE, format="png", fig.height=3, fig.width=4}
+```{r fALFF, fig.cap="fALFF", rgl=TRUE, format="png", fig.height=3, fig.width=4}
 # [Use `view_xifti_surface` here.]
 # view_xifti_surface(
 ```
 
-```{r, fig.cap="fALFF, subcortex", rgl=TRUE, format="png", fig.height=4, fig.width=2.5}
+```{r fALFFsub, fig.cap="fALFF, subcortex", format="png", fig.height=4, fig.width=2.5}
 # [Use `view_xifti_volume` here.]
 # view_xifti_volume(
 ```
@@ -177,12 +177,12 @@ xii <- move_from_mwall(xii)
 
 Pick our seed and plot it.
 
-```{r parc, fig.cap='Parcellation', fig.width=4, fig.height=3}
+```{r parc, fig.cap='Parcellation', rgl=TRUE, fig.width=4, fig.height=3}
 # View(parc$meta$cifti$labels$parcels["Key"])
 plot(parc, title="Parcellation")
 ```
 
-```{r parc2, fig.cap='Selected parcel', fig.width=4, fig.height=3}
+```{r parc2, fig.cap='Selected parcel', rgl=TRUE, fig.width=4, fig.height=3}
 the_seed <- 3 # sample(seq(100), 1) 
 parc_masked <- transform_xifti(parc, function(q){ifelse(q==the_seed, q, 0)})
 plot(parc_masked, borders="black", title=paste0("Parcel #", the_seed), fname="Seed")
@@ -237,7 +237,7 @@ seed_fname <- paste0("seed_cor_", the_seed, ".dscalar.nii")
 
 Finally, plot the result!
 
-```{r seedCor, fig.cap='Seed correlation', fig.width=4, fig.height=3}
+```{r seedCor, fig.cap='Seed correlation', rgl=TRUE, fig.width=4, fig.height=3}
 view_xifti_surface(xii_sc, zlim=c(-.7, .7))
 ```
 
