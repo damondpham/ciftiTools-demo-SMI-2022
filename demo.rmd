@@ -185,7 +185,7 @@ plot(parc, title="Parcellation")
 ```{r parc2, fig.cap='Selected parcel', rgl=TRUE, fig.width=4, fig.height=3}
 the_seed <- 3 # sample(seq(100), 1) 
 parc_masked <- transform_xifti(parc, function(q){ifelse(q==the_seed, q, 0)})
-plot(parc_masked, borders="black", title=paste0("Parcel #", the_seed), fname="Seed")
+plot(parc_masked, borders="black", title=paste0("Parcel #", the_seed))
 ```
 
 Now that we've identified the seed, let's do this!
@@ -244,7 +244,6 @@ view_xifti_surface(xii_sc, zlim=c(-.7, .7))
 ```{r seedCorSub, fig.cap='Seed cor., subcortex', fig.width=2.5, fig.height=4}
 view_xifti_volume(xii_sc, zlim=c(-.7, .7))
 ```
-
 
 ## Task #3
 

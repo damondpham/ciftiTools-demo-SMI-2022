@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 Install and load `ciftiTools`:
 
 ```{r}
-if (!require("ciftiTools",  quietly=TRUE)){ 
+if (!require("ciftiTools", quietly=TRUE)){ 
   install.packages("ciftiTools")
 } else if (packageVersion("ciftiTools") < "0.9.0") {
   update.packages("ciftiTools")
