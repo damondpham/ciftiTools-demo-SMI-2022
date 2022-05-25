@@ -1,0 +1,404 @@
+---
+title: "`ciftiTools` Demo for SMI 2022"
+author: "Damon Pham & Amanda Mejia"
+date: "5/25/2022"
+output: 
+  revealjs::revealjs_presentation:
+    css: slides/style.css
+    highlight: pygments
+    transition: none
+    fig_caption: yes
+    background_transition: fade
+    reveal_options:
+      controls: false
+      controlsTutorial: false
+---
+
+```{r setup, include=FALSE}
+library(ciftiTools)
+ciftiTools.setOption("wb_path", "~/Desktop/workbench")
+
+library(knitr)
+knitr::opts_chunk$set(autodep = TRUE, cache = FALSE)
+
+library(rgl)
+rgl::setupKnitr()
+
+# Sometimes the first OpenGL window does not render properly.
+rgl::rgl.open(); rgl::rgl.close()
+```
+
+## NIFTIs, GIFTIs, & CIFTIs
+    
+. . .
+
+- **NIFTI**: voxel-based
+    - <span class="gray">`[...]`</span>`.nii.gz`\
+\
+
+. . .
+
+
+- **GIFTI**: surface-based
+    - <span class="gray">`[...]`</span>`.surf.gii`
+    - <span class="gray">`[...]`</span>`.func.gii`
+    - <span class="gray">`[...]`</span>`.label.gii`\
+\
+
+. . .
+
+
+- **CIFTI**: gray matter
+    - <span class="gray">`[...]`</span>`.dtseries.nii`
+    - <span class="gray">`[...]`</span>`.dscalar.nii`
+    - <span class="gray">`[...]`</span>`.dlabel.nii`
+    
+<aside class="notes">
+  Before demo, begin with background information. 
+  Raise of hands for familiarity with each file type.
+  Three supported intents.
+</aside>
+
+## From NIFTI to CIFTI
+
+```{r nii2cii1, echo=FALSE, out.width = '100%'}
+knitr::include_graphics("slides/assets/ai-comp/NIFTI-to-CIFTI-1.jpg")
+```
+
+## From NIFTI to CIFTI
+
+```{r nii2cii2, echo=FALSE, out.width = '100%'}
+knitr::include_graphics("slides/assets/ai-comp/NIFTI-to-CIFTI-2.jpg")
+```
+
+<aside class="notes">
+  Where CIFTIs might come from: HCP-style volume to surface pipeline. (ciftify)
+  Small amount of smoothing.
+  Other sources: generated "from scratch," including `brainSim`.
+</aside>
+
+## Anatomy of a CIFTI file
+
+```{r anat1, echo=FALSE, out.width = '75%'}
+knitr::include_graphics("slides/assets/ai-comp/CIFTI-anatomy-1.jpg")
+```
+
+## Anatomy of a CIFTI file
+
+```{r anat2, echo=FALSE, out.width = '75%'}
+knitr::include_graphics("slides/assets/ai-comp/CIFTI-anatomy-2.jpg")
+```
+
+. . .
+
+<span class="gborder">What's missing?</span>
+
+<aside class="notes">
+  What information is missing for making a plot of the cortex data?
+</aside>
+
+## B.Y.O. surfaces
+
+```{r 2surfs, echo=FALSE, out.width = '100%'}
+knitr::include_graphics("slides/assets/ai-comp/two-surfs.jpg")
+```
+
+<aside class="notes">
+  Surface geometry is interchangeable (given same resolution).
+</aside>
+
+## Why use CIFTI files?
+
+Advantages of surface-based analyses for cortical gray matter <small>(Fischl et al., 1999; Anticevic et al., 2008; Van Essen, 2012; Glasser et al., 2016; Coalson et al., 2018; Brodoehl et al., 2020)</small>
+
+> - More appropriate smoothing
+> - More accurate spatial modeling 
+> - Better inter-subject alignment
+> - Reduced dimensionality\
+\
+
+. . . 
+
+Doesn't omit the subcortex
+
+<aside class="notes">
+  Why bother converting volumetric fMRI data to a surface format?
+  First, smoothing and spatial modeling can take advantage of more accurate distances between brain locations. 
+  Since the cortical sheet is folded, two locations on adjacent folds may be quite close in Euclidean space, but actually far on the cortical surface. 
+  Surface-based analyses will measure the correct distance along the surface, so that more distal regions aren't improperly treated together. 
+  And because cortical folding varies between individuals, inter-subject alignment is improved with surface data, leading to increased sensitivity and specificity in group analyses. 
+  Finally, the data is of reduced dimensionality, which helps make intensive strategies like Bayesian modeling more feasible. 
+  And the reason you'd want to use a CIFTI file instead of GIFTI files is for inclusion of the subcortex. 
+  There's also the benefit of containing both hemispheres in a single file, whereas GIFTI files have separate files for the left and right cortex.
+</aside>
+
+## What is `ciftiTools`?
+
+```{r sticker, echo=FALSE, out.width = '20%'}
+knitr::include_graphics("slides/assets/ciftiTools-sticker.png")
+```
+
+> - Convenience
+> - Reproducibility
+> - Extensibility
+
+<aside class="notes">
+  Convenience: user-friendly; in R environment; one-stop shop (GIFTIs too)
+  Reproducibility: R Markdown, saving code script vs Workbench settings/scenes
+  Extensibility: building blocks for more complex analyses; packages build on `ciftiTools`
+</aside>
+
+## What is `ciftiTools`?
+
+```{r graphicalAbstract1, echo=FALSE, out.width = '100%'}
+knitr::include_graphics("slides/assets/ai-comp/graphical-abstract-1.jpg")
+```
+
+## What is `ciftiTools`?
+
+```{r graphicalAbstract2, echo=FALSE, out.width = '100%'}
+knitr::include_graphics("slides/assets/ai-comp/graphical-abstract-2.jpg")
+```
+
+## What is `ciftiTools`?
+
+```{r graphicalAbstract3, echo=FALSE, out.width = '100%'}
+knitr::include_graphics("slides/assets/ai-comp/graphical-abstract-3.jpg")
+```
+
+## What is `ciftiTools`?
+
+```{r graphicalAbstract4, echo=FALSE, out.width = '100%'}
+knitr::include_graphics("slides/assets/ai-comp/graphical-abstract-4.jpg")
+```
+
+## Example: Compute summary stats
+
+```{r}
+xii <- read_xifti(
+  "data/MyelinAndCorrThickness.dscalar.nii",
+  brainstructures="right", resamp_res=2000
+)
+xii <- scale_xifti(xii)
+round(apply_xifti(xii, 2, summary), digits=2)
+```
+
+<aside class="notes">
+  Demonstrates convenience. 
+  I show `apply_xifti` here because it's used for the first task.
+</aside>
+
+## Example: Interactive visualization
+
+```{r fig.height=4.2, fig.width=5}
+view_xifti_surface(
+  xii, idx=seq(2), view="lateral", widget=TRUE,
+  zlim=c(-4, 4), colors="RdYlBu"
+)
+```
+
+<aside class="notes">
+  Demonstrates cool embedding of widget. Might need to resize browser window once.
+</aside>
+
+## Let's get started!
+
+Let's move to `demo.rmd` and complete the preliminary task:
+
+<span class="gborder">Install and set up `ciftiTools`.</span>
+
+. . .
+
+https://tinyurl.com/ciftiTools-SMI
+https://github.com/damondpham
+
+<aside class="notes">
+  Walk through Workbench installation and `ciftiTools` setup. 
+  We will help everyone--finish early, explore `?ciftiTools`.
+  Show `?read_cifti` documentation. 
+  Table of contents.
+</aside>
+
+## Task 1: Practicing the basics
+
+The first task introduces a few core `ciftiTools` functions.
+
+. . .
+
+$~$
+
+<span class="gborder">Read in a resting-state fMRI session. Plot the first timepoint.</span>
+
+. . .
+
+$~$
+
+<span class="gborder">Compute the fALFF* for this session. Plot it.</span>
+
+$~$
+
+*fractional amplitude of low-frequency fluctuations
+
+<aside class="notes">
+  HCP Access Terms.
+  `view_xifti_surface` for now, for knitting.
+</aside>
+
+## Working with the data matrix
+
+For more complex data manipulation:
+
+> 1. Extract the data matrix with `as.matrix`
+> 2. Manipulate as desired
+> 3. Plug the result back into the `"xifti"` object with `newdata_xifti`
+
+## Example: Compute PCA
+
+```{r, rgl=TRUE, format="png", fig.height=3, fig.width=4}
+xii <- read_cifti("data/MSC.4k.dtseries.nii")
+z <- as.matrix(xii) # 1.
+z <- scale(z, scale=FALSE) # 2.
+z <- svd(z / (nrow(z)-1))$u
+xii <- newdata_xifti(xii, z) # 3.
+plot(xii, zlim=c(-.04, .04))
+```
+
+<aside class="notes">
+  nu=1, nv=0
+</aside>
+
+## Working around the medial wall
+
+```{r medialWall1, echo=FALSE, out.width = '100%'}
+knitr::include_graphics("slides/assets/ai-comp/medial-wall-1.jpg")
+```
+
+## Working around the medial wall
+
+```{r medialWall2, echo=FALSE, out.width = '100%'}
+knitr::include_graphics("slides/assets/ai-comp/medial-wall-2.jpg")
+```
+
+## Working around the medial wall
+
+```{r medialWall3, echo=FALSE, out.width = '100%'}
+knitr::include_graphics("slides/assets/ai-comp/medial-wall-3.jpg")
+```
+
+## Working with the data matrix, v2
+
+For more complex data manipulation, including the medial wall:
+
+> 0. <span class="green"> Fill the medial wall with `NA` using `move_from_mwall` </span>
+> 1. Extract the data matrix with `as.matrix`
+> 2. Manipulate as desired
+> 3. Plug the result back into the `"xifti"` object with `newdata_xifti`
+> 4. <span class="green"> Move `NA` values back using `move_to_mwall` </span>
+
+## Task 2: Seed-based correlation
+
+Your turn! Let's try the next task:
+
+$~$
+
+<span class="gborder">Compute the seed-based correlation for a selected parcel.</span>
+
+. . .
+
+$~$
+
+<span class="gborder">Write out the result. Plot it too!</span>
+
+<aside class="notes">
+  Can go rogue and pick your own parcel.
+  The MSC data has already undergone extensive nuisance regression: 
+    (i) demeaning and detrending, 
+    (ii), multiple regression including: whole brain, ventricular and white matter signals, and motion regressors derived by Volterra expansion (Friston et al., 1996), with censored data ignored during beta estimation, [...] 
+    (iv) a band-pass filter (0.009 Hz < f < 0.08 Hz)
+</aside>
+
+<aside class="notes">
+  The MSC data does not have the subcortex in the same MNI space, so there's no anatomical image in the background. Here, I show an example of how that looks with HCP data.
+</aside>
+
+## Task 3: Building from `ciftiTools`
+
+In this last task we will practice writing a function that builds on top of `ciftiTools`.
+
+. . .
+
+$~$
+
+To get an idea of how that works, we'll explore `BayesfMRI`, a package that uses `ciftiTools`.
+
+## `BayesGLM` source code excerpts
+
+`BayesGLM_cifti`
+
+```{r, eval=FALSE}
+# [...]
+  for (ss in 1:n_sess) {
+    # [...]
+  
+    if (is_xifti) {
+      xii_ss <- cifti_fname[[ss]]
+    } else {
+      xii_ss <- read_cifti(
+        cifti_fname[ss], brainstructures=brainstructures,
+        resamp_res=resamp_res
+      )
+    }
+    
+    # [...]
+    mwallL_ss <- xii_ss$meta$cortex$medial_wall_mask$left
+    mwallR_ss <- xii_ss$meta$cortex$medial_wall_mask$right
+    ntime[ss] <- ncol(xii_ss)
+    
+# [...]
+  if(do_Bayesian){
+    if(do_left) datL <- BayesGLM_results$left$beta_estimates[[ss]][mwallL==1,]
+    if(do_right) datR <- BayesGLM_results$right$beta_estimates[[ss]][mwallR==1,]
+    BayesGLM_cifti[[ss]] <- as.xifti(
+      cortexL = datL,
+      cortexL_mwall = mwallL,
+      cortexR = datR,
+      cortexR_mwall = mwallR
+    )
+    BayesGLM_cifti[[ss]]$meta$cifti$names <- beta_names
+# [...]
+```
+
+## `BayesGLM` source code excerpts
+
+`plot.BayesGLM_cifti`
+
+```{r, eval=FALSE}
+# [...]
+  ciftiTools::view_xifti_surface(x[[method]][[session]], idx=idx, zlim=zlim, ...)
+# [...]
+```
+
+<aside class="notes">
+  Show ?BayesGLM_cifti
+  Not actually use the Bayesian or spatial model.
+  Less activation in left cortex because the right side of the brain is more responsible for motor movement on the left side of the body.
+  R package building: DESCRIPTION, roxygen. Offer to show?
+</aside>
+
+## Task 3: building from `ciftiTools`
+
+<span class="gborder">Complete `combine_and_plot_GLM`, and try it out!</span>
+
+# Thanks! Questions?
+
+<!-- ## Appendix: Subcortex with anatomical reference -->
+
+<!-- ```{r subcortex, echo=FALSE, out.width = '85%'} -->
+<!-- knitr::include_graphics("slides/assets/subEx.jpg") -->
+<!-- ``` -->
+
+<!-- ## Appendix: Subcortex legend -->
+
+<!-- ```{r subcortleg, echo=FALSE, out.width = '65%'} -->
+<!-- knitr::include_graphics("slides/assets/ai-comp/subcortex-legend.jpg") -->
+<!-- ``` -->

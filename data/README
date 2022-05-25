@@ -1,0 +1,9 @@
+name_here	name_original	url	resampling
+Kong2022_100Parc.dlabel.nii	Schaefer2018_100Parcels_Kong2022_17Networks_order.dlabel.nii	https://github.com/ThomasYeoLab/CBIG/tree/master/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal/Parcellations/HCP/fslr32k/cifti	NA
+MSC03_motor07_run01.4k.dtseries.nii	derivatives surface_pipeline sub-MSC03 task_timecourses ses-func07 sub-MSC03_ses-func07_task-motor_run-01_bold.dtseries.nii	https://openneuro.org/datasets/ds000224/versions/00002	4000
+MSC03_motor07_run01_events.tsv	derivatives surface_pipeline sub-MSC03 task_timecourses ses-func07 sub-MSC03_ses-func07_task-motor_run-01_events.tsv	https://openneuro.org/datasets/ds000224/versions/00002	NA
+MSC03_motor07_run02.4k.dtseries.nii	derivatives surface_pipeline sub-MSC03 task_timecourses ses-func07 sub-MSC03_ses-func07_task-motor_run-02_bold.dtseries.nii	https://openneuro.org/datasets/ds000224/versions/00002	4000
+MSC03_motor07_run02_events.tsv	derivatives surface_pipeline sub-MSC03 task_timecourses ses-func07 sub-MSC03_ses-func07_task-motor_run-02_events.tsv	https://openneuro.org/datasets/ds000224/versions/00002	NA
+MSC03_rest07.4k.dtseries.nii	derivatives surface_pipeline sub-MSC03 processed_restingstate_timecourses ses-func07 cifti sub-MSC03_ses-func07_task-rest_bold_32k_fsLR.dtseries.nii	https://openneuro.org/datasets/ds000224/versions/00002	4000
+MSC03_rest07_tmask.txt	derivatives surface_pipeline sub-MSC03 processed_restingstate_timecourses ses-func07 cifti sub-MSC03_ses-func07_task-rest_bold_32k_fsLR_tmask.txt	https://openneuro.org/datasets/ds000224/versions/00002	NA
+MyelinAndCorrThickness.dscalar.nii	Conte69.MyelinAndCorrThickness.32k_fs_LR.dscalar.nii	https://www.nitrc.org/projects/cifti/	NA
