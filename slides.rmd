@@ -54,8 +54,11 @@ rgl::rgl.open(); rgl::rgl.close()
     - <span class="gray">`[...]`</span>`.dlabel.nii`
     
 <aside class="notes">
-  Before demo, begin with background information. 
+  Overview: background, then demo. 
+  Questions, interruptions.
   Raise of hands for familiarity with each file type.
+  Three common file types neuroimaging data.
+  CIFTI: gray matter: fMRI.
   Three supported intents.
 </aside>
 
@@ -123,13 +126,26 @@ Doesn't omit the subcortex
 
 <aside class="notes">
   Why bother converting volumetric fMRI data to a surface format?
-  First, smoothing and spatial modeling can take advantage of more accurate distances between brain locations. 
-  Since the cortical sheet is folded, two locations on adjacent folds may be quite close in Euclidean space, but actually far on the cortical surface. 
-  Surface-based analyses will measure the correct distance along the surface, so that more distal regions aren't improperly treated together. 
-  And because cortical folding varies between individuals, inter-subject alignment is improved with surface data, leading to increased sensitivity and specificity in group analyses. 
-  Finally, the data is of reduced dimensionality, which helps make intensive strategies like Bayesian modeling more feasible. 
-  And the reason you'd want to use a CIFTI file instead of GIFTI files is for inclusion of the subcortex. 
-  There's also the benefit of containing both hemispheres in a single file, whereas GIFTI files have separate files for the left and right cortex.
+  First, smoothing and spatial modeling can take 
+    advantage of more accurate distances between brain locations. 
+  Since the cortical sheet is folded, two locations 
+    on adjacent folds may be quite close in Euclidean space, 
+    but actually far on the cortical surface. 
+  Surface-based analyses will measure the correct distance 
+    along the surface, so that more distal regions aren't 
+    improperly treated together. 
+  And because cortical folding varies between individuals, 
+    inter-subject alignment is improved with surface data, 
+    leading to increased sensitivity and specificity 
+    in group analyses. 
+  Finally, the data is of reduced dimensionality, which 
+    helps make intensive strategies like Bayesian 
+    modeling more feasible. 
+  And the reason you'd want to use a CIFTI file instead 
+    of GIFTI files is for inclusion of the subcortex. 
+  There's also the benefit of containing both hemispheres
+    in a single file, whereas GIFTI files have separate
+    files for the left and right cortex.
 </aside>
 
 ## What is `ciftiTools`?
@@ -209,7 +225,10 @@ Let's move to `demo.rmd` and complete the preliminary task:
 
 . . .
 
-https://tinyurl.com/ciftiTools-SMI
+$~$
+
+https://tinyurl.com/ciftiTools-SMI \
+\
 https://github.com/damondpham
 
 <aside class="notes">
@@ -240,7 +259,7 @@ $~$
 *fractional amplitude of low-frequency fluctuations
 
 <aside class="notes">
-  HCP Access Terms.
+  HCP Open Access Terms.
   `view_xifti_surface` for now, for knitting.
 </aside>
 
@@ -313,12 +332,16 @@ $~$
   Can go rogue and pick your own parcel.
   The MSC data has already undergone extensive nuisance regression: 
     (i) demeaning and detrending, 
-    (ii), multiple regression including: whole brain, ventricular and white matter signals, and motion regressors derived by Volterra expansion (Friston et al., 1996), with censored data ignored during beta estimation, [...] 
+    (ii), multiple regression including: whole brain, ventricular and white matter signals, 
+      and motion regressors derived by Volterra expansion 
+      (Friston et al., 1996), with censored data ignored during beta estimation, [...] 
     (iv) a band-pass filter (0.009 Hz < f < 0.08 Hz)
 </aside>
 
 <aside class="notes">
-  The MSC data does not have the subcortex in the same MNI space, so there's no anatomical image in the background. Here, I show an example of how that looks with HCP data.
+  The MSC data does not have the subcortex in the same MNI space, 
+    so there's no anatomical image in the background. 
+    Here, I show an example of how that looks with HCP data.
 </aside>
 
 ## Task 3: Building from `ciftiTools`
@@ -381,7 +404,8 @@ To get an idea of how that works, we'll explore `BayesfMRI`, a package that uses
 <aside class="notes">
   Show ?BayesGLM_cifti
   Not actually use the Bayesian or spatial model.
-  Less activation in left cortex because the right side of the brain is more responsible for motor movement on the left side of the body.
+  Less activation in left cortex because the right side of the brain is 
+    more responsible for motor movement on the left side of the body.
   R package building: DESCRIPTION, roxygen. Offer to show?
 </aside>
 
