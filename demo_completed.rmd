@@ -1,0 +1,414 @@
+---
+title: "ciftiTools Demo"
+date: "5/25/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Getting started
+
+#### Preliminaries
+
+Install and load `ciftiTools`:
+
+```{r}
+if (!require("ciftiTools", quietly=TRUE)){ 
+  install.packages("ciftiTools")
+} else if (packageVersion("ciftiTools") < "0.9.0") {
+  update.packages("ciftiTools")
+}
+
+library(ciftiTools)
+```
+
+Download the Connectome Workbench here: https://www.humanconnectome.org/software/get-connectome-workbench
+
+Tell `ciftiTools` where to find the Connectome Workbench:
+
+```{r}
+# Replace '~/Desktop/workbench' with the actual path on your computer.
+#   If successful, the path to the Workbench executable will be printed.
+ciftiTools.setOption("wb_path", "~/Desktop/workbench")
+```
+
+Setup `rgl` plots for knitting.
+
+```{r}
+library(rgl)
+rgl::setupKnitr()
+
+# Sometimes the first OpenGL window does not render properly.
+rgl::rgl.open(); rgl::rgl.close()
+```
+
+#### First steps
+
+Read in our first CIFTI file!
+
+```{r}
+cii_fname <- file.path("data", "MyelinAndCorrThickness.dscalar.nii")
+xii <- read_cifti(cii_fname)
+xii # same as `summary(xii)`
+```
+
+Plot it:
+
+```{r, fig.cap="Myelin", rgl=TRUE, format="png", fig.height=3, fig.width=4}
+# same as view_xifti(xii) and view_xifti_surface(xii)
+plot(xii, zlim=c(1,2)) 
+```
+
+View a list of commonly-used functions:
+
+```{r}
+if(interactive()) { help(ciftiTools) }
+```
+
+View details for a specific function:
+
+```{r}
+if(interactive()) { help(view_xifti_surface) }
+```
+
+## Task #1
+
+#### a. Read & plot the fMRI data.
+
+Use `read_cifti` to read in the CIFTI file named `cii_fname`. Set the `brainstructures` argument to include all brain structures.
+
+```{r}
+cii_fname <- file.path("data/toy_fMRI.dtseries.nii")
+# [Use `read_cifti` here]
+xii <- read_cifti(cii_fname, brainstructures="all")
+xii
+```
+
+We will add very inflated surfaces prior to plotting.
+
+```{r}
+xii <- add_surf(
+  xii, 
+  load_surf("left", "very inflated"), 
+  load_surf("right", "very inflated")
+)
+```
+
+Use `view_xifti_surface` to plot the first timepoint.
+
+Customize your plot by specifying some arguments! Here's a few ideas:
+
+* Set `title` 
+* Set `zlim` (min, max)
+* Change `colors` to the name of a sequential palette from `RColorBrewer`. To see a list, use `RColorBrewer::display.brewer.all()`.
+
+```{r, fig.cap="First timepoint", rgl=TRUE, format="png", fig.height=3, fig.width=4}
+# [Use `view_xifti_surface` here]
+view_xifti_surface(
+  xii, title="T=1", 
+  zlim=c(5000, 10000), colors="PuRd"
+)
+```
+
+####  b. Compute & plot the fALFF
+
+Here's a function to calculate the fALFF of a single time series vector. 
+
+```{r}
+#' Adapted from `ANTsR::alffmap`
+falff <- function(x, TR=.72, f_low=.01, f_high=.1){
+  # Subtract linear trend
+  x <- lm(x~seq(length(x)))$residuals
+  
+  # Compute Fourier decomposition.
+  y <- stats::spec.pgram(
+    stats::ts(x, frequency=1/TR), 
+    taper=0, plot=FALSE
+  )
+  freq_mask <- (y$freq > f_low) & (y$freq < f_high)
+  
+  # Compute proportion within frequency range
+  sum(y$spec[freq_mask]) / sum(y$spec)
+}
+```
+
+Use `apply_xifti` to apply the `falff` function to each row of the data matrix in `xii`.
+
+```{r}
+# [Use `apply_xifti` here.]
+fxii <- apply_xifti(xii, 1, falff)
+```
+
+Plot the results using a color scale going from 0 (white) to 1 (blue), and save to a PNG file. For help on finding the relevant arguments, read `help(view_xifti_surface)`.
+
+```{r fALFF, fig.cap="fALFF", rgl=TRUE, format="png", fig.height=3, fig.width=4}
+# [Use `view_xifti_surface` here.]
+view_xifti_surface(fxii, colors=c("white", "blue"), zlim=c(0, 1))
+```
+
+```{r fALFFsub, fig.cap="fALFF, subcortex", format="png", fig.height=4, fig.width=2.5}
+# [Use `view_xifti_volume` here.]
+view_xifti_volume(fxii, colors=c("white", "blue"), zlim=c(0, 1))
+```
+
+```{r, fig.cap="fALFF, alternate colors", rgl=TRUE, format="png", fig.height=3, fig.width=4}
+view_xifti_surface(fxii, colors="Blues", zlim=c(0, 1))
+```
+
+## Task #2
+
+Read the fMRI data and parcellation.
+
+```{r}
+cii_fname <- file.path("data/MSC03_rest07.4k.dtseries.nii")
+xii <- read_cifti(cii_fname)
+dim(xii)
+```
+
+```{r}
+parc <- read_cifti("data/Kong2022_100Parc.dlabel.nii", resamp_res=4000)
+dim(parc)
+```
+
+```{r}
+# rownames(parc$meta$cifti$labels[[1]])
+table(c(as.matrix(parc))==0)
+```
+
+Incompatible ROIs: we need to replace the medial wall mask with `NA` values.
+
+```{r}
+xii <- move_from_mwall(xii)
+```
+
+Pick our seed and plot it.
+
+```{r parc, fig.cap='Parcellation', rgl=TRUE, fig.width=4, fig.height=3}
+# View(parc$meta$cifti$labels$parcels["Key"])
+plot(parc, title="Parcellation")
+```
+
+```{r parc2, fig.cap='Selected parcel', rgl=TRUE, fig.width=4, fig.height=3}
+the_seed <- 3 # sample(seq(100), 1) 
+parc_masked <- transform_xifti(parc, function(q){ifelse(q==the_seed, q, 0)})
+plot(parc_masked, borders="black", title=paste0("Parcel #", the_seed))
+```
+
+Now that we've identified the seed, let's do this!
+
+#### a. Scrub the fMRI data.
+
+Use `select_xifti` to mask out high-motion timepoints. (Only keep the columns for which the corresponding entry of `xii_tmask` is `TRUE`.)
+
+```{r}
+xii_tmask <- read.csv("data/MSC03_rest07_tmask.txt")
+xii_tmask <- which(as.logical(xii_tmask[,1]))
+# [Use `select_xifti` here.] 
+xii <- select_xifti(xii, xii_tmask)
+dim(xii)
+```
+
+#### b. Compute the seed correlations.
+
+The below code chunk is already filled out. Here's what it does:
+
+* `seed_mask`: Convert the parcellation `"xifti"` to a numeric vector of parcel indices for each vertex, and then convert that to a binary vector indicating whether the parcel is the seed parcel.
+* `parc_mean_ts`: Convert the resting-state fMRI `"xifti"` to a matrix, subset the rows to select only vertices inside the parcel, and then take the mean across space.
+* `xii_sc`: Compute correlation between each vertex time series, and the parcel mean time series. 
+
+```{r}
+seed_mask <- c(as.matrix(parc)) == the_seed
+parc_mean_ts <- colMeans(as.matrix(xii)[seed_mask,,drop=FALSE])
+xii_sc <- cor(t(as.matrix(xii)), parc_mean_ts)
+xii_sc <- newdata_xifti(xii, xii_sc)
+```
+
+Now we will convert the result back to a `"xifti"` with `newdata_xifti`, and then format is as a "dscalar" since the data no longer represents a time series.
+
+```{r}
+xii_sc <- cor(t(as.matrix(xii)), parc_mean_ts)
+# [Use `newdata_xifti` here.]
+xii_sc <- newdata_xifti(xii, xii_sc)
+# [Use `convert_xifti` here.]
+xii_sc <- convert_xifti(xii_sc, "dscalar")
+```
+
+Write out the result with `write_xifti`.
+
+```{r}
+seed_fname <- paste0("seed_cor_", the_seed, ".dscalar.nii")
+# [Use `write_xifti` here.]
+write_xifti(xii_sc, seed_fname)
+```
+
+Finally, plot the result!
+
+```{r seedCor, fig.cap='Seed correlation', rgl=TRUE, fig.width=4, fig.height=3}
+view_xifti_surface(xii_sc, zlim=c(-.7, .7))
+```
+
+## Task #3
+
+Install the latest version of BayesfMRI from GitHub.
+
+```{r}
+if (!requireNamespace("BayesfMRI", quietly=TRUE) || packageVersion("BayesfMRI") < "0.2.0") {
+  if (!requireNamespace("devtools", quietly=TRUE)) { install.packages("devtools") }
+  devtools::install_github("mandymejia/BayesfMRI", "2.0")
+}
+library(BayesfMRI)
+```
+
+Read in and format the event onsets file. Use the "left foot" task.
+
+```{r}
+onsets <- paste0("data/MSC03_motor07_run0", seq(2), "_events.tsv")
+onsets <- lapply(as.list(onsets), read.csv, sep="\t")
+onsets <- lapply(onsets, function(q){list(as.matrix(q[q[,3]=="LFoot",seq(2)]))})
+```
+
+Run classical GLM for the right and left cortex separately.
+
+```{r}
+bglmR <- BayesGLM_cifti(
+  paste0("data/MSC03_motor07_run0", seq(2), ".4k.dtseries.nii"),
+  brainstructures="right", surfR = load_surf("right", resamp_res=4000),
+  onsets=onsets, ar_order=0, EM=FALSE, Bayes=FALSE, resamp_res=NULL, TR=2.2
+)
+
+bglmL <- BayesGLM_cifti(
+  paste0("data/MSC03_motor07_run0", seq(2), ".4k.dtseries.nii"),
+  brainstructures="left", surfL = load_surf("left", resamp_res=4000),
+  onsets=onsets, ar_order=0, EM=FALSE, Bayes=FALSE, resamp_res=NULL, TR=2.2
+)
+```
+
+#### a. Write `combine_and_plot_GLM`
+
+This function should combine classical, multi-session GLM results from the left and right hemispheres, and then plot the result. To make it work, add a line that uses `combine_xifti` to merge the left and right hemisphere `"xifti"` objects.
+
+```{r}
+combine_and_plot_GLM <- function(
+  left_GLM, right_GLM, 
+  what=c("estimates", "SE_estimates", "resids"),
+  ...){
+  
+  # Argument checks.
+  stopifnot(is.xifti(left_GLM$betas_classical$session_avg))
+  stopifnot(is.xifti(right_GLM$betas_classical$session_avg))
+  what <- match.arg(what, c("estimates", "SE_estimates", "resids"))
+  
+  # Get separate `"xifti"` objects.
+  if (what=="estimates"){
+    left_GLM <- left_GLM$betas_classical$session_avg
+    right_GLM <- right_GLM$betas_classical$session_avg
+    
+  } else if (what=="SE_estimates") {
+    # Left
+    left_mask <- left_GLM$GLMs_classical$cortexL$session_avg$mask
+    x <- left_GLM$GLMs_classical$cortexL$session_avg$SE_estimates
+    left_GLM <- newdata_xifti(
+      left_GLM$betas_classical$session_avg,
+      x[left_mask,,drop=FALSE]
+    )
+    # Right
+    right_mask <- right_GLM$GLMs_classical$cortexR$session_avg$mask
+    x <- right_GLM$GLMs_classical$cortexR$session_avg$SE_estimates
+    right_GLM <- newdata_xifti(
+      right_GLM$betas_classical$session_avg,
+      x[right_mask,,drop=FALSE]
+    )
+    
+  } else if (what=="resids") {
+    left_GLM <- newdata_xifti(
+      left_GLM$betas_classical$session_avg,
+      left_GLM$GLMs_classical$cortexL$session_avg$resids
+    )
+    right_GLM <- newdata_xifti(
+      right_GLM$betas_classical$session_avg,
+      right_GLM$GLMs_classical$cortexR$session_avg$resids
+    )
+  } else { stop() }
+  
+  # [Use `combine_xifti` here.]
+  both_GLM <- combine_xifti(left_GLM, right_GLM)
+  
+  plot(both_GLM, ...)
+}
+```
+
+Try it out!
+
+```{r bglm, fig.cap='Combined GLM results', fig.width=8, fig.height=3}
+combine_and_plot_GLM(bglmL, bglmR, "SE")
+```
+
+Lastly, let's check out an example of using `view_comp`. We will plot the GLM result alongside its activations calculated by statistical inference.
+
+```{r}
+# Write and save the GLM result plot.
+p1 <- plot(bglmR, fname="glmR_vals", title="GLM result", together="leg")
+# Write and save the activations plot.
+p2 <- plot(id_activations_cifti(bglmR)$activations_xifti, fname="glmR_act", title="Thresholded activation", together="leg")
+```
+
+```{r bglmR, fig.cap='Left foot task activation (right cortex)', fig.width=7}
+# Composite
+view_comp(c(p1, p2), nrow=1)
+```
+
+## Appendix
+
+#### Bonus Task #1
+
+Read in cortex CIFTI data without using `read_xifti`! To work around this challenge, use `separate_cifti` to split the CIFTI file into GIFTI files, and then read those in with `read_xifti2`. Check your work by comparing the result to `read_xifti`. Extra bonus if you can find a way to obtain the subcortical data too.
+
+```{r}
+xii1 <- read_xifti("data/MSC03_motor07_run01.4k.dtseries.nii")
+
+xii2_sep <- separate_cifti("data/MSC03_motor07_run01.4k.dtseries.nii")
+xii2 <- read_xifti2(
+  xii2_sep["cortexL"], xii2_sep["ROIcortexL"],
+  xii2_sep["cortexR"], xii2_sep["ROIcortexR"]
+)
+
+stopifnot(max(as.matrix(xii1-xii2)) == 0)
+```
+
+```{r}
+# Extra bonus
+xii1 <- read_xifti(
+  "data/MSC03_motor07_run01.4k.dtseries.nii", 
+  brainstructures="all"
+)
+
+xii2_sep <- separate_cifti(
+  "data/MSC03_motor07_run01.4k.dtseries.nii",
+  brainstructures="all"
+)
+xii2_ctx <- read_xifti2(
+  xii2_sep["cortexL"], xii2_sep["ROIcortexL"],
+  xii2_sep["cortexR"], xii2_sep["ROIcortexR"]
+)
+xii2_sub <- as.xifti(
+  subcortVol = RNifti::readNifti(xii2_sep["subcortVol"]),
+  subcortLabs = RNifti::readNifti(xii2_sep["subcortLabs"]),
+  subcortMask = RNifti::readNifti(xii2_sep["ROIsubcortVol"])
+)
+xii2 <- combine_xifti(xii2_ctx, xii2_sub)
+stopifnot(max(as.matrix(xii1-xii2)) == 0)
+```
+
+#### Making plots for publications
+
+`ciftiTools` can create high-quality plot suitable for publication. Here are a few tips:
+
+* Save PNG files using `fname` rather than taking screenshots of the OpenGL window.
+* Use `width` and `height` to increase the plot size. The limits are equal to your screen's resolution.
+* `view_comp` can create composite images, but it's also possible to put together plots by importing them into an image-editing software like GIMP, or to create subplots within `LaTeX`. For this same reason, you may want to omit `title` and instead add text above or below the plot later. You can also use `legend_embed=FALSE` to composite the legend yourself. 
+* When plotting `dlabel` files where colors are repeated for different keys, you can use `borders=TRUE` to delineate them better on cortex plots. 
+* In Photoshop, the "Object Selection" tool works great with the brain meshes! You can also try using the `material=list(smooth=FALSE, lit=FALSE)` to avoid smoothing colors and shading, allowing precise selection of region by color/value for further editing. 
+
+Please see the Appendix C in the [`ciftiTools` paper](https://doi.org/10.1016/j.neuroimage.2022.118877) for guidance on embedding `ciftiTools` plots in R Markdown documents.
